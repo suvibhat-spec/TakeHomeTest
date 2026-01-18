@@ -1,0 +1,9 @@
+# .gitignore
+# Ignore build outputs
+bin/
+obj/    
+*.exe
+*.dll
+*.so
+*.dylib
+logs/

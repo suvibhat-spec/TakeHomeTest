@@ -1,0 +1,14 @@
+@OrderService_HostAddress = http://localhost:5144
+
+POST {{OrderService_HostAddress}}/api/orders
+Content-Type: application/json
+
+{
+  "orderId": "123e4567-e89b-12d3-a456-426614174000",
+  "userId": "123e4567-e89b-12d3-a456-426614174000",
+  "product": "Laptop",
+  "quantity": 1,
+  "price": 999.99
+}
+
+###

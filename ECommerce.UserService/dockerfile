@@ -1,0 +1,34 @@
+# Use the official .NET 10 SDK image for building
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+# Copy shared project
+COPY ["ECommerce.Shared/ECommerce.Shared.csproj", "ECommerce.Shared/"]
+# Copy UserService project
+COPY ["ECommerce.UserService/ECommerce.UserService.csproj", "ECommerce.UserService/"]
+
+RUN dotnet restore "ECommerce.UserService/ECommerce.UserService.csproj"
+
+# Copy everything else
+COPY ECommerce.Shared/ ECommerce.Shared/
+COPY ECommerce.UserService/ ECommerce.UserService/
+
+WORKDIR /src/ECommerce.UserService
+RUN dotnet build "ECommerce.UserService.csproj" -c Release -o /app/build
+
+# Publish the application
+FROM build AS publish
+WORKDIR /src/ECommerce.UserService
+RUN dotnet publish "ECommerce.UserService.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+# Use the runtime image for the final stage
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+WORKDIR /app
+EXPOSE 8080
+EXPOSE 443
+
+# Copy the published app
+COPY --from=publish /app/publish .
+
+# Set the entry point
+ENTRYPOINT ["dotnet", "ECommerce.UserService.dll"]

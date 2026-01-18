@@ -1,0 +1,14 @@
+@UserService_HostAddress = http://localhost:5251
+
+### Post User
+POST {{UserService_HostAddress}}/api/users
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "email": "abc@def.com"
+}
+
+
+### Get User by Id
+GET {{UserService_HostAddress}}/api/users/{userId}  
