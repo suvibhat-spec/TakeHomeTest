@@ -23,7 +23,14 @@ builder.Services.AddControllers();
 
 builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(action=>
+{
+    action.SwaggerDoc("v1", new Microsoft.OpenApi.OpenApiInfo
+    {
+        Title = "ECommerce Order Service API",
+        Version = "v1"
+    });
+});
 
 builder.Services.AddDbContext<OrderDbContext>(options=>
     options.UseInMemoryDatabase("orderdb"));//scoped by default
@@ -45,7 +52,10 @@ if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
     app.MapOpenApi();
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(config=>
+    {
+        config.SwaggerEndpoint("/swagger/v1/swagger.json", "ECommerce Order Service API V1");
+    });
 } 
 app.UseHttpsRedirection();
 app.UseSerilogRequestLogging();
