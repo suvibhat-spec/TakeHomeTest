@@ -22,6 +22,7 @@ The sample application is build based on the microservices architecture. There a
 ![Application Architecture](microservices.png)
 
 ## Opensource Tools Used
+- Serilog (For Logging)
 - Automapper (For object-to-object mapping)
 - Entity Framework Core (For Data Access)
 - Kafka (Message Broker)
