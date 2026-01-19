@@ -3,6 +3,8 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
+namespace ECommerce.Shared.Middleware;
+
 public class ExceptionHandlingMiddleware(
     RequestDelegate next,
     ILogger<ExceptionHandlingMiddleware> logger)
@@ -28,8 +30,7 @@ public class ExceptionHandlingMiddleware(
         var (statusCode, message) = exception switch
         {
             ArgumentException => (StatusCodes.Status404NotFound, exception.Message),
-            ValidationException v => (StatusCodes.Status400BadRequest, v.Message),
-            InvalidOperationException => (StatusCodes.Status400BadRequest, exception.Message),
+            ValidationException or InvalidOperationException => (StatusCodes.Status400BadRequest, exception.Message),
             _ => (StatusCodes.Status500InternalServerError, "An internal server error occurred")
         };
 

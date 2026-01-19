@@ -9,12 +9,15 @@ using ECommerce.Shared.Kafka.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using ECommerce.Shared.Kafka.Events;
+using ECommerce.Shared.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure Serilog
 builder.Host.UseSerilog((context, configuration) =>
-    configuration.ReadFrom.Configuration(context.Configuration));
+    configuration.ReadFrom.Configuration(context.Configuration)
+    .Enrich.FromLogContext());
+
 // Add services 
 builder.Services.AddHealthChecks();
 builder.Services.AddControllers();
@@ -45,7 +48,11 @@ builder.Services.AddHostedService<OrderCreatedEventConsumer>();
 var app = builder.Build();
 
 // Configure middleware
+
+// handle unhandled exceptions
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+// add correlation ID to requests
+app.UseMiddleware<CorrelationIdMiddleware>();
 // Configure swagger only in development
 if (app.Environment.IsDevelopment())
 {

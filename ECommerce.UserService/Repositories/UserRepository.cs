@@ -12,7 +12,7 @@ namespace ECommerce.UserService.Repositories
             if (await context.Users.AnyAsync(u => u.Email == user.Email))
             {
                 logger.LogError("Attempted to create user with existing Email: {UserEmail}", user.Email);
-                throw new InvalidOperationException("Email already exists");
+                throw new InvalidOperationException("Email already taken");
             }
             User addUser = new User();
             addUser.Id = Guid.NewGuid();

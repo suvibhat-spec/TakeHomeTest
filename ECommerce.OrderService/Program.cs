@@ -7,6 +7,7 @@ using ECommerce.OrderService.Service;
 using ECommerce.Shared.Kafka.Configuration;
 using ECommerce.Shared.Kafka.Consumer;
 using ECommerce.Shared.Kafka.Events;
+using ECommerce.Shared.Middleware;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -45,7 +46,12 @@ builder.Services.AddHostedService<UserCreatedEventConsumer>();
 
 var app = builder.Build();
 // Configure middleware
+
+// handle unhandled exceptions
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+// add correlation ID to requests
+app.UseMiddleware<CorrelationIdMiddleware>();
 // Configure swagger only in development
 if (app.Environment.IsDevelopment())
 {
