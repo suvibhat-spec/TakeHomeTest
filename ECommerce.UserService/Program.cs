@@ -45,18 +45,17 @@ builder.Services.AddHostedService<OrderCreatedEventConsumer>();
 var app = builder.Build();
 
 // Configure middleware
-
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 // Configure swagger only in development
 if (app.Environment.IsDevelopment())
 {
-    app.UseDeveloperExceptionPage();
-    app.MapOpenApi();
     app.UseSwagger();
     app.UseSwaggerUI(config=>
     {
         config.SwaggerEndpoint("/swagger/v1/swagger.json", "ECommerce User Service API V1");
     });
 } 
+
 app.UseHttpsRedirection();
 app.UseSerilogRequestLogging();
 //app.UseAuthentication();

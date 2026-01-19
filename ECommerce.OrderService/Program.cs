@@ -45,11 +45,10 @@ builder.Services.AddHostedService<UserCreatedEventConsumer>();
 
 var app = builder.Build();
 // Configure middleware
-
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 // Configure swagger only in development
 if (app.Environment.IsDevelopment())
 {
-    app.UseDeveloperExceptionPage();
     app.MapOpenApi();
     app.UseSwagger();
     app.UseSwaggerUI(config=>
