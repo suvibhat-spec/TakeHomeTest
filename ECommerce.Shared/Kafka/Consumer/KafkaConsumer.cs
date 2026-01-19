@@ -66,10 +66,16 @@ namespace ECommerce.Shared.Kafka.Consumer
                             _consumer.Commit(consumeResult);
                         }
                     }
+                    catch(KafkaException kex)
+                    {
+                        if (kex.Error.Code == ErrorCode.UnknownTopicOrPart)
+                        {
+                            Logger.LogError(kex, "Topic {Topic} not available yet", _topic);
+                        }
+                    }
                     catch (Exception ex)
                     {
                         Logger.LogError(ex, "Error processing message from topic {Topic}", _topic);
-                        // Don't commit if processing failed
                     }
                 }
             }

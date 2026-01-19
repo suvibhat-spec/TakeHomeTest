@@ -1,6 +1,6 @@
-# ECommerce Microservices architecture for .Net Core Application
+# Microservices architecture for ECommerce .Net Core Application
 ### .Net Core 10.0 using asp.net core Web API with C#.Net and EF
-- [ECommerce Microservices architecture for .Net Core Application](#ecommerce-microservices-architecture-for-net-core-application)
+- [Microservices architecture for ECommerce .Net Core Application](#microservices-architecture-for-ecommerce-net-core-application)
     - [.Net Core 10.0 using asp.net core Web API with C#.Net and EF](#net-core-100-using-aspnet-core-web-api-with-cnet-and-ef)
   - [Introduction](#introduction)
   - [Application Architecture](#application-architecture)
