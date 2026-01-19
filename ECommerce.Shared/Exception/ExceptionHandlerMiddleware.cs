@@ -2,7 +2,6 @@ using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using ECommerce.Shared.ExceptionHandling.Exceptions;
 
 public class ExceptionHandlingMiddleware(
     RequestDelegate next,
@@ -22,14 +21,13 @@ public class ExceptionHandlingMiddleware(
         }
     }
 
-    private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
+    private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
         context.Response.ContentType = "application/json";
 
         var (statusCode, message) = exception switch
         {
-            UserNotFoundException or ArgumentException => (StatusCodes.Status404NotFound, exception.Message),
-            EmailTakenException => (StatusCodes.Status409Conflict, exception.Message),
+            ArgumentException => (StatusCodes.Status404NotFound, exception.Message),
             ValidationException v => (StatusCodes.Status400BadRequest, v.Message),
             InvalidOperationException => (StatusCodes.Status400BadRequest, exception.Message),
             _ => (StatusCodes.Status500InternalServerError, "An internal server error occurred")
