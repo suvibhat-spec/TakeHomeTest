@@ -2,7 +2,6 @@ using ECommerce.Shared.Kafka.Consumer;
 using ECommerce.Shared.Kafka.Events;
 using Microsoft.Extensions.Options;
 using ECommerce.Shared.Kafka.Configuration;
-using ECommerce.Shared.Kafka;
 
 namespace ECommerce.OrderService.Kafka.Consumers
 {
@@ -11,10 +10,11 @@ namespace ECommerce.OrderService.Kafka.Consumers
         public UserCreatedEventConsumer(
             IOptions<KafkaSettings> kafkaSettings,
             IServiceProvider serviceProvider,
-            ILogger<KafkaConsumerService<UserCreatedEvent>> logger)
-            : base(kafkaSettings, serviceProvider, logger, TopicConstants.UserCreated)
+            ILogger<KafkaConsumerService<UserCreatedEvent>> logger,
+            IOptions<KafkaTopicSettings> topicSettings)
+            : base(kafkaSettings, serviceProvider, logger, topicSettings.Value.UserCreated)
         {
-            logger.LogInformation("[UserCreatedEventConsumer] Initialized for topic {Topic}", TopicConstants.UserCreated);
+            logger.LogInformation("[UserCreatedEventConsumer] Initialized for topic {Topic}", topicSettings.Value.UserCreated);
         }
     }
 }

@@ -12,6 +12,7 @@ namespace ECommerce.Shared.Kafka.Configuration
             IConfiguration configuration)
         {
             services.Configure<KafkaSettings>(configuration.GetSection("Kafka"));
+            services.Configure<KafkaTopicSettings>(configuration.GetSection("Kafka:Topics"));
             services.AddSingleton<IKafkaProducer, KafkaProducerService>();
             return services;
         }

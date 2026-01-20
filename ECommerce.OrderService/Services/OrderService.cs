@@ -1,9 +1,10 @@
 using AutoMapper;
 using ECommerce.OrderService.Dto;
 using ECommerce.OrderService.Repositories;
-using ECommerce.Shared.Kafka;
+using ECommerce.Shared.Kafka.Configuration;
 using ECommerce.Shared.Kafka.Events;
 using ECommerce.Shared.Kafka.Producer;
+using Microsoft.Extensions.Options;
 
 
 namespace ECommerce.OrderService.Service {
@@ -14,17 +15,20 @@ namespace ECommerce.OrderService.Service {
         private readonly IMapper _mapper;
         private readonly IKafkaProducer _kafkaProducer;
         private readonly ILogger<IOrderService> _logger;
+        private readonly KafkaTopicSettings _topicSettings;
 
         public OrderService(
             IOrderRepository repository,
             IMapper mapper,
             IKafkaProducer kafkaProducer,
-            ILogger<IOrderService> logger)
+            ILogger<IOrderService> logger,
+            IOptions<KafkaTopicSettings> topicSettings)
         {
             _repository = repository;
             _mapper = mapper;
             _kafkaProducer = kafkaProducer;
             _logger = logger;
+            _topicSettings = topicSettings.Value;
         }
 
         public async Task<OrderResponseDto?> GetOrderAsync(Guid id, CancellationToken ct)
@@ -65,7 +69,7 @@ namespace ECommerce.OrderService.Service {
             try
             {
                 await _kafkaProducer.PublishAsync<OrderCreatedEvent>(
-                    TopicConstants.OrderCreated,
+                    _topicSettings.OrderCreated,
                     createdOrder.Id.ToString(),
                     new OrderCreatedEvent(createdOrder.Id, createdOrder.UserId, createdOrder.Product, createdOrder.Quantity, createdOrder.Price)
                 );

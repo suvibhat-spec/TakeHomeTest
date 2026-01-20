@@ -8,6 +8,8 @@ using ECommerce.OrderService.Models;
 using ECommerce.Shared.Kafka.Producer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using ECommerce.Shared.Kafka.Configuration;
 using Moq;
 using OrderSvc = ECommerce.OrderService.Service.OrderService;
 
@@ -34,6 +36,13 @@ public class OrderServiceIntegrationTests
             cfg.CreateMap<CreateOrderRequestDto, Order>();
         });
         return config.CreateMapper();
+    }
+
+    private IOptions<KafkaTopicSettings> GetMockTopicSettings()
+    {
+        var mockTopicSettings = new Mock<IOptions<KafkaTopicSettings>>();
+        mockTopicSettings.Setup(x => x.Value).Returns(new KafkaTopicSettings());
+        return mockTopicSettings.Object;
     }
 
     private void SeedUserReference(OrderDbContext context, Guid userId)
@@ -66,7 +75,7 @@ public class OrderServiceIntegrationTests
         var mapper = GetMapper();
         var mockKafkaProducer = new Mock<IKafkaProducer>();
         var mockLogger = new Mock<ILogger<IOrderService>>();
-        var service = new OrderSvc(repository, mapper, mockKafkaProducer.Object, mockLogger.Object);
+        var service = new OrderSvc(repository, mapper, mockKafkaProducer.Object, mockLogger.Object, GetMockTopicSettings());
 
         // Act
         var result = await service.GetOrderAsync(orderId, CancellationToken.None);
@@ -102,7 +111,7 @@ public class OrderServiceIntegrationTests
         var mapper = GetMapper();
         var mockKafkaProducer = new Mock<IKafkaProducer>();
         var mockLogger = new Mock<ILogger<IOrderService>>();
-        var service = new OrderSvc(repository, mapper, mockKafkaProducer.Object, mockLogger.Object);
+        var service = new OrderSvc(repository, mapper, mockKafkaProducer.Object, mockLogger.Object, GetMockTopicSettings());
 
         // Act
         var result = await service.GetAllOrdersAsync(CancellationToken.None);
@@ -133,7 +142,7 @@ public class OrderServiceIntegrationTests
         var mapper = GetMapper();
         var mockKafkaProducer = new Mock<IKafkaProducer>();
         var mockLogger = new Mock<ILogger<IOrderService>>();
-        var service = new OrderSvc(repository, mapper, mockKafkaProducer.Object, mockLogger.Object);
+        var service = new OrderSvc(repository, mapper, mockKafkaProducer.Object, mockLogger.Object, GetMockTopicSettings());
 
         // Act
         var result = await service.CreateOrderAsync(createDto, CancellationToken.None);
@@ -173,7 +182,7 @@ public class OrderServiceIntegrationTests
         mockKafkaProducer.Setup(k => k.PublishAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>()))
             .Returns(Task.CompletedTask);
         var mockLogger = new Mock<ILogger<IOrderService>>();
-        var service = new OrderSvc(repository, mapper, mockKafkaProducer.Object, mockLogger.Object);
+        var service = new OrderSvc(repository, mapper, mockKafkaProducer.Object, mockLogger.Object, GetMockTopicSettings());
 
         // Act
         var result = await service.CreateOrderAsync(createDto, CancellationToken.None);
@@ -207,7 +216,7 @@ public class OrderServiceIntegrationTests
         mockKafkaProducer.Setup(k => k.PublishAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>()))
             .ThrowsAsync(new Exception("Kafka error"));
         var mockLogger = new Mock<ILogger<IOrderService>>();
-        var service = new OrderSvc(repository, mapper, mockKafkaProducer.Object, mockLogger.Object);
+        var service = new OrderSvc(repository, mapper, mockKafkaProducer.Object, mockLogger.Object, GetMockTopicSettings());
 
         // Act & Assert - Should not throw even if Kafka fails
         var result = await service.CreateOrderAsync(createDto, CancellationToken.None);
@@ -228,7 +237,7 @@ public class OrderServiceIntegrationTests
         var mapper = GetMapper();
         var mockKafkaProducer = new Mock<IKafkaProducer>();
         var mockLogger = new Mock<ILogger<IOrderService>>();
-        var service = new OrderSvc(repository, mapper, mockKafkaProducer.Object, mockLogger.Object);
+        var service = new OrderSvc(repository, mapper, mockKafkaProducer.Object, mockLogger.Object, GetMockTopicSettings());
 
         // Act
         var result = await service.GetOrderAsync(Guid.NewGuid(), CancellationToken.None);
@@ -246,7 +255,7 @@ public class OrderServiceIntegrationTests
         var mapper = GetMapper();
         var mockKafkaProducer = new Mock<IKafkaProducer>();
         var mockLogger = new Mock<ILogger<IOrderService>>();
-        var service = new OrderSvc(repository, mapper, mockKafkaProducer.Object, mockLogger.Object);
+        var service = new OrderSvc(repository, mapper, mockKafkaProducer.Object, mockLogger.Object, GetMockTopicSettings());
 
         // Act
         var result = await service.GetAllOrdersAsync(CancellationToken.None);
@@ -275,7 +284,7 @@ public class OrderServiceIntegrationTests
         var mapper = GetMapper();
         var mockKafkaProducer = new Mock<IKafkaProducer>();
         var mockLogger = new Mock<ILogger<IOrderService>>();
-        var service = new OrderSvc(repository, mapper, mockKafkaProducer.Object, mockLogger.Object);
+        var service = new OrderSvc(repository, mapper, mockKafkaProducer.Object, mockLogger.Object, GetMockTopicSettings());
 
         // Act
         foreach (var dto in createDtos)

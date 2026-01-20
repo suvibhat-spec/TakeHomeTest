@@ -4,7 +4,8 @@ using ECommerce.UserService.Model;
 using ECommerce.UserService.Repositories;
 using ECommerce.Shared.Kafka.Producer;
 using ECommerce.Shared.Kafka.Events;
-using ECommerce.Shared.Kafka;
+using ECommerce.Shared.Kafka.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace ECommerce.UserService.Services {
 
@@ -14,17 +15,20 @@ namespace ECommerce.UserService.Services {
         private readonly IMapper _mapper;
         private readonly IKafkaProducer _kafkaProducer;
         private readonly ILogger<IUserService> _logger;
+        private readonly KafkaTopicSettings _topicSettings;
 
         public UserService(
             IUserRepository repository,
             IMapper mapper,
             IKafkaProducer kafkaProducer,
-            ILogger<IUserService> logger)
+            ILogger<IUserService> logger,
+            IOptions<KafkaTopicSettings> topicSettings)
         {
             _repository = repository;
             _mapper = mapper;
             _kafkaProducer = kafkaProducer;
             _logger = logger;
+            _topicSettings = topicSettings.Value;
         }
 
         public async Task<UserResponseDto?> GetUserAsync(Guid id, CancellationToken ct)
@@ -59,7 +63,7 @@ namespace ECommerce.UserService.Services {
             try
             {
                 await _kafkaProducer.PublishAsync<UserCreatedEvent>(
-                    TopicConstants.UserCreated,
+                    _topicSettings.UserCreated,
                     createdUser.Id.ToString(),
                     new UserCreatedEvent(createdUser.Id, createdUser.Name, createdUser.Email)
                 );

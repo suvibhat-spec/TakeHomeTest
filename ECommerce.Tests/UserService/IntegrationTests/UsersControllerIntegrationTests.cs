@@ -9,6 +9,8 @@ using ECommerce.Shared.Kafka.Producer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using ECommerce.Shared.Kafka.Configuration;
 using Moq;
 using UserSvc = ECommerce.UserService.Services.UserService;
 
@@ -37,6 +39,13 @@ public class UsersControllerIntegrationTests
         return config.CreateMapper();
     }
 
+    private IOptions<KafkaTopicSettings> GetMockTopicSettings()
+    {
+        var mockTopicSettings = new Mock<IOptions<KafkaTopicSettings>>();
+        mockTopicSettings.Setup(x => x.Value).Returns(new KafkaTopicSettings());
+        return mockTopicSettings.Object;
+    }
+
     private UsersController GetController(UserDbContext context)
     {
         var repository = new UserRepository(context, new Mock<ILogger<UserRepository>>().Object);
@@ -45,7 +54,7 @@ public class UsersControllerIntegrationTests
         mockKafkaProducer.Setup(k => k.PublishAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>()))
             .Returns(Task.CompletedTask);
         var mockLogger = new Mock<ILogger<UsersController>>();
-        var service = new UserSvc(repository, mapper, mockKafkaProducer.Object, new Mock<ILogger<IUserService>>().Object);
+        var service = new UserSvc(repository, mapper, mockKafkaProducer.Object, new Mock<ILogger<IUserService>>().Object, GetMockTopicSettings());
         return new UsersController(service, mockLogger.Object);
     }
 

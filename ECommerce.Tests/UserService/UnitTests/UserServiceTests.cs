@@ -3,11 +3,12 @@ using ECommerce.UserService.Dto;
 using ECommerce.UserService.Model;
 using ECommerce.UserService.Repositories;
 using ECommerce.Shared.Kafka.Producer;
+using ECommerce.Shared.Kafka.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using UserSvc = ECommerce.UserService.Services.UserService;
 using ECommerce.UserService.Services;
-using ECommerce.Shared.Kafka;
 
 namespace ECommerce.UnitTests.UserService;
 
@@ -17,6 +18,7 @@ public class UserServiceTests
     private readonly Mock<IMapper> _mockMapper;
     private readonly Mock<ILogger<IUserService>> _mockLogger;
     private readonly Mock<IKafkaProducer> _mockKafkaProducer;
+    private readonly Mock<IOptions<KafkaTopicSettings>> _mockTopicSettings;
 
     public UserServiceTests()
     {
@@ -24,6 +26,8 @@ public class UserServiceTests
         _mockMapper = new Mock<IMapper>();
         _mockLogger = new Mock<ILogger<IUserService>>();
         _mockKafkaProducer = new Mock<IKafkaProducer>();
+        _mockTopicSettings = new Mock<IOptions<KafkaTopicSettings>>();
+        _mockTopicSettings.Setup(x => x.Value).Returns(new KafkaTopicSettings());
     }
 
     [Fact]
@@ -38,7 +42,7 @@ public class UserServiceTests
             .ReturnsAsync(user);
         _mockMapper.Setup(m => m.Map<UserResponseDto>(user)).Returns(responseDto);
 
-        var service = new UserSvc(_mockRepository.Object, _mockMapper.Object, _mockKafkaProducer.Object, _mockLogger.Object);
+        var service = new UserSvc(_mockRepository.Object, _mockMapper.Object, _mockKafkaProducer.Object, _mockLogger.Object, _mockTopicSettings.Object);
 
         // Act
         var result = await service.GetUserAsync(userId, CancellationToken.None);
@@ -59,7 +63,7 @@ public class UserServiceTests
         _mockRepository.Setup(r => r.GetUserAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
-        var service = new UserSvc(_mockRepository.Object, _mockMapper.Object, _mockKafkaProducer.Object, _mockLogger.Object);
+        var service = new UserSvc(_mockRepository.Object, _mockMapper.Object, _mockKafkaProducer.Object, _mockLogger.Object, _mockTopicSettings.Object);
 
         // Act
         var result = await service.GetUserAsync(userId, CancellationToken.None);
@@ -84,7 +88,7 @@ public class UserServiceTests
         _mockKafkaProducer.Setup(k => k.PublishAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>()))
             .Returns(Task.CompletedTask);
 
-        var service = new UserSvc(_mockRepository.Object, _mockMapper.Object, _mockKafkaProducer.Object, _mockLogger.Object);
+        var service = new UserSvc(_mockRepository.Object, _mockMapper.Object, _mockKafkaProducer.Object, _mockLogger.Object, _mockTopicSettings.Object);
 
         // Act
         var result = await service.CreateUserAsync(createDto, CancellationToken.None);
@@ -93,6 +97,6 @@ public class UserServiceTests
         Assert.NotNull(result);
         Assert.Equal("New User", result.Name);
         _mockRepository.Verify(r => r.CreateUserAsync(createDto, It.IsAny<CancellationToken>()), Times.Once);
-        _mockKafkaProducer.Verify(k => k.PublishAsync(TopicConstants.UserCreated, createdUser.Id.ToString(), It.IsAny<object>()), Times.Once);
+        _mockKafkaProducer.Verify(k => k.PublishAsync(_mockTopicSettings.Object.Value.UserCreated, createdUser.Id.ToString(), It.IsAny<object>()), Times.Once);
     }
 }

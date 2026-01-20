@@ -7,6 +7,8 @@ using ECommerce.UserService.Services;
 using ECommerce.Shared.Kafka.Producer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using ECommerce.Shared.Kafka.Configuration;
 using Moq;
 using UserSvc = ECommerce.UserService.Services.UserService;
 using ECommerce.Shared.Kafka;
@@ -36,6 +38,13 @@ public class UserServiceIntegrationTests
         return config.CreateMapper();
     }
 
+    private IOptions<KafkaTopicSettings> GetMockTopicSettings()
+    {
+        var mockTopicSettings = new Mock<IOptions<KafkaTopicSettings>>();
+        mockTopicSettings.Setup(x => x.Value).Returns(new KafkaTopicSettings());
+        return mockTopicSettings.Object;
+    }
+
     [Fact]
     public async Task GetUserAsync_WithValidId_ShouldReturnUserFromDatabase()
     {
@@ -50,7 +59,7 @@ public class UserServiceIntegrationTests
         var mapper = GetMapper();
         var mockKafkaProducer = new Mock<IKafkaProducer>();
         var mockLogger = new Mock<ILogger<IUserService>>();
-        var service = new UserSvc(repository, mapper, mockKafkaProducer.Object, mockLogger.Object);
+        var service = new UserSvc(repository, mapper, mockKafkaProducer.Object, mockLogger.Object, GetMockTopicSettings());
 
         // Act
         var result = await service.GetUserAsync(userId, CancellationToken.None);
@@ -75,7 +84,7 @@ public class UserServiceIntegrationTests
         mockKafkaProducer.Setup(k => k.PublishAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>()))
             .Returns(Task.CompletedTask);
         var mockLogger = new Mock<ILogger<IUserService>>();
-        var service = new UserSvc(repository, mapper, mockKafkaProducer.Object, mockLogger.Object);
+        var service = new UserSvc(repository, mapper, mockKafkaProducer.Object, mockLogger.Object, GetMockTopicSettings());
 
         // Act
         var result = await service.CreateUserAsync(createDto, CancellationToken.None);
@@ -104,14 +113,15 @@ public class UserServiceIntegrationTests
         mockKafkaProducer.Setup(k => k.PublishAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>()))
             .Returns(Task.CompletedTask);
         var mockLogger = new Mock<ILogger<IUserService>>();
-        var service = new UserSvc(repository, mapper, mockKafkaProducer.Object, mockLogger.Object);
+        var mockTopicSettings = GetMockTopicSettings();
+        var service = new UserSvc(repository, mapper, mockKafkaProducer.Object, mockLogger.Object, mockTopicSettings);
 
         // Act
         var result = await service.CreateUserAsync(createDto, CancellationToken.None);
 
         // Assert
         mockKafkaProducer.Verify(
-            k => k.PublishAsync(TopicConstants.UserCreated, result.Id.ToString(), It.IsAny<object>()),
+            k => k.PublishAsync(mockTopicSettings.Value.UserCreated, result.Id.ToString(), It.IsAny<object>()),
             Times.Once);
     }
 
@@ -128,7 +138,7 @@ public class UserServiceIntegrationTests
         mockKafkaProducer.Setup(k => k.PublishAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>()))
             .ThrowsAsync(new Exception("Kafka connection failed"));
         var mockLogger = new Mock<ILogger<IUserService>>();
-        var service = new UserSvc(repository, mapper, mockKafkaProducer.Object, mockLogger.Object);
+        var service = new UserSvc(repository, mapper, mockKafkaProducer.Object, mockLogger.Object, GetMockTopicSettings());
 
         // Act
         var result = await service.CreateUserAsync(createDto, CancellationToken.None);
@@ -151,7 +161,7 @@ public class UserServiceIntegrationTests
         var mapper = GetMapper();
         var mockKafkaProducer = new Mock<IKafkaProducer>();
         var mockLogger = new Mock<ILogger<IUserService>>();
-        var service = new UserSvc(repository, mapper, mockKafkaProducer.Object, mockLogger.Object);
+        var service = new UserSvc(repository, mapper, mockKafkaProducer.Object, mockLogger.Object, GetMockTopicSettings());
 
         // Act
         var result = await service.GetUserAsync(Guid.NewGuid(), CancellationToken.None);
@@ -172,7 +182,7 @@ public class UserServiceIntegrationTests
         mockKafkaProducer.Setup(k => k.PublishAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>()))
             .Returns(Task.CompletedTask);
         var mockLogger = new Mock<ILogger<IUserService>>();
-        var service = new UserSvc(repository, mapper, mockKafkaProducer.Object, mockLogger.Object);
+        var service = new UserSvc(repository, mapper, mockKafkaProducer.Object, mockLogger.Object, GetMockTopicSettings());
 
         var dtos = new List<CreateUserRequestDto>
         {

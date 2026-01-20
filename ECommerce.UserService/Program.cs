@@ -10,6 +10,8 @@ using Microsoft.EntityFrameworkCore;
 using Serilog;
 using ECommerce.Shared.Kafka.Events;
 using ECommerce.Shared.Middleware;
+using ECommerce.UserService.Model;
+using Confluent.Kafka;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +22,7 @@ builder.Host.UseSerilog((context, configuration) =>
 
 // Add services 
 builder.Services.AddHealthChecks();
+
 builder.Services.AddControllers();
 
 builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);
@@ -69,5 +72,7 @@ app.UseSerilogRequestLogging();
 //app.UseAuthorization();
 app.MapControllers();
 app.UseHealthChecks("/health");
+
+
 
 app.Run();
