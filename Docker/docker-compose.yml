@@ -65,8 +65,10 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - Kafka__BootstrapServers=kafka:9092
+      - ServiceUrls__UserService=http://userservice:8080
     depends_on:
       - kafka
+      - userservice
     networks:
       - ecommerce-network
     restart: unless-stopped

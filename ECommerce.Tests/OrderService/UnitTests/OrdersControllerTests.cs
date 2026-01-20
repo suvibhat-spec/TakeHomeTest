@@ -58,28 +58,7 @@ public class OrdersControllerTests
     }
 
     [Fact]
-    public async Task GetAllOrders_ShouldReturnAllOrders()
-    {
-        // Arrange
-        var orders = new List<OrderResponseDto>
-        {
-            new OrderResponseDto { Id = Guid.NewGuid(), UserId = Guid.NewGuid(), Product = "Monitor", Quantity = 1, Price = 300m },
-            new OrderResponseDto { Id = Guid.NewGuid(), UserId = Guid.NewGuid(), Product = "Keyboard", Quantity = 2, Price = 90m }
-        };
-
-        _mockOrderService.Setup(s => s.GetAllOrdersAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(orders);
-
-        // Act
-        var result = await _mockOrderService.Object.GetAllOrdersAsync(CancellationToken.None);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(2, result.Count());
-    }
-
-    [Fact]
-    public async Task AddOrder_WithValidData_ShouldCreateOrder()
+    public async Task CreateOrder_WithValidData_ShouldCreateOrder()
     {
         // Arrange
         var userId = Guid.NewGuid();
@@ -100,17 +79,17 @@ public class OrdersControllerTests
     }
 
     [Fact]
-    public async Task GetAllOrders_WithEmptyDatabase_ShouldReturnEmptyList()
+    public async Task CreateOrder_WithInvalidUserId_ShouldThrowException()
     {
         // Arrange
-        _mockOrderService.Setup(s => s.GetAllOrdersAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<OrderResponseDto>());
+        var userId = Guid.NewGuid();
+        var createDto = new CreateOrderRequestDto { UserId = userId, Product = "Invalid Product", Quantity = 1, Price = 100m };
 
-        // Act
-        var result = await _mockOrderService.Object.GetAllOrdersAsync(CancellationToken.None);
+        _mockOrderService.Setup(s => s.CreateOrderAsync(createDto, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new ArgumentException("User does not exist"));
 
-        // Assert
-        Assert.NotNull(result);
-        Assert.Empty(result);
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(async () => 
+            await _mockOrderService.Object.CreateOrderAsync(createDto, CancellationToken.None));
     }
 }

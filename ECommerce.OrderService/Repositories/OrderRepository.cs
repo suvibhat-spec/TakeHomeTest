@@ -1,21 +1,19 @@
+using ECommerce.OrderService.Configuration;
 using ECommerce.OrderService.Data;
 using ECommerce.OrderService.Dto;
 using ECommerce.OrderService.Model;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using System.Net.Http;
 
-namespace ECommerce.OrderService.Repositories
+namespace ECommerce.OrderService.Repositories   
 {
     public class OrderRepository(OrderDbContext context, ILogger<OrderRepository> logger) : IOrderRepository
     {
         public async Task<Order> CreateOrderAsync(CreateOrderRequestDto order, CancellationToken cancellationToken)
         {   
-            bool userExists = await context.UserRefs.AnyAsync(u => u.Id == order.UserId); // ensure user exists
-            if (!userExists)
-            {
-                logger.LogError("Attempted to create order for non-existent User ID: {UserId}", order.UserId);
-                throw new ArgumentException("User does not exist");
-            }
-
+            logger.LogInformation("Creating order for User ID: {UserId}, Product: {Product}, Quantity: {Quantity}, Price: {Price}", 
+                order.UserId, order.Product, order.Quantity, order.Price);
             Order addOrder = new Order();
             addOrder.Id = Guid.NewGuid();
             addOrder.Price = order.Price;
@@ -25,7 +23,7 @@ namespace ECommerce.OrderService.Repositories
 
             context.Orders.Add(addOrder);
             await context.SaveChangesAsync(cancellationToken);
-
+            logger.LogInformation("Order created with ID: {OrderId}", addOrder.Id);
             return addOrder;
         }
 
@@ -37,6 +35,11 @@ namespace ECommerce.OrderService.Repositories
         public async Task<IEnumerable<Order>> GetAllOrdersAsync(CancellationToken ct)
         {
             return await context.Orders.ToListAsync(ct);
+        }
+
+        public async Task<bool> IsUserExistAsync(Guid userId, CancellationToken ct)
+        {
+            return await context.UserRefs.AnyAsync(u => u.Id == userId, ct);
         }
     }
 }

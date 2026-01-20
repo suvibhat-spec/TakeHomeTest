@@ -1,3 +1,4 @@
+#pragma warning disable CS8602 // Dereference of a possibly null reference - False positive in expression trees
 using ECommerce.Shared.Middleware;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -135,8 +136,8 @@ public class ExceptionHandlerMiddlewareTests
                 LogLevel.Error,
                 It.IsAny<EventId>(),
                 It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("An unhandled exception occurred")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
 

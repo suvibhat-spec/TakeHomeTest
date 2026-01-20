@@ -1,13 +1,18 @@
 using AutoMapper;
+using ECommerce.OrderService.Configuration;
 using ECommerce.OrderService.Dto;
 using ECommerce.OrderService.Model;
 using ECommerce.OrderService.Data;
 using ECommerce.OrderService.Controller;
 using ECommerce.OrderService.Repositories;
+using ECommerce.OrderService.Service;
 using ECommerce.OrderService.Models;
+using ECommerce.Shared.Kafka.Producer;
+using ECommerce.Shared.Kafka.Configuration;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 
 namespace ECommerce.Tests.OrderService.IntegrationTests;
@@ -46,7 +51,27 @@ public class OrdersControllerIntegrationTests
         var mockLogger = new Mock<ILogger<OrdersController>>();
         var repository = new OrderRepository(context, new Mock<ILogger<OrderRepository>>().Object);
         var mapper = GetMapper();
-        return new OrdersController(repository, mapper, mockLogger.Object);
+        
+        // Create OrderService with required mocks
+        var mockKafkaProducer = new Mock<IKafkaProducer>();
+        var mockServiceLogger = new Mock<ILogger<IOrderService>>();
+        var mockHttpClient = new Mock<HttpClient>();
+        var mockTopicSettings = new Mock<IOptions<KafkaTopicSettings>>();
+        mockTopicSettings.Setup(x => x.Value).Returns(new KafkaTopicSettings());
+        var mockServiceUrlSettings = new Mock<IOptions<ServiceUrlSettings>>();
+        mockServiceUrlSettings.Setup(x => x.Value).Returns(new ServiceUrlSettings { UserService = "http://localhost:5001" });
+        
+        var orderService = new ECommerce.OrderService.Service.OrderService(
+            repository, 
+            mapper, 
+            mockKafkaProducer.Object, 
+            mockServiceLogger.Object,
+            mockHttpClient.Object,
+            mockTopicSettings.Object,
+            mockServiceUrlSettings.Object
+        );
+        
+        return new OrdersController(orderService, mapper, mockLogger.Object);
     }
 
     [Fact]

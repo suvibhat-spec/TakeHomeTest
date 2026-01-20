@@ -6,12 +6,12 @@ namespace ECommerce.OrderService.Dto {
         [Required]
         public Guid UserId { get; set; }        // Reference to the user who placed the order
         [Required]
-        public string Product { get; set; }    // Product name
+        public string Product { get; set; } = string.Empty;    // Product name
         [Required]
         [Range(1, int.MaxValue, ErrorMessage = "Quantity must be at least 1")]
         public int Quantity { get; set; }      // Number of items
         [RegularExpression(@"^\d+(\.\d{1,2})?$")]   // two decimal places
-        [Range(0, 9999999999999999.99)]
+        [Range(0, 999999999.99)]
         public decimal Price { get; set; }     // Total price
     }
 }

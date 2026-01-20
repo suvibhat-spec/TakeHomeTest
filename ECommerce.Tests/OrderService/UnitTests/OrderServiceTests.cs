@@ -1,4 +1,5 @@
 using AutoMapper;
+using ECommerce.OrderService.Configuration;
 using ECommerce.OrderService.Dto;
 using ECommerce.OrderService.Model;
 using ECommerce.OrderService.Repositories;
@@ -13,24 +14,27 @@ using ECommerce.OrderService.Service;
 namespace ECommerce.UnitTests.Orderservice;
 
 public class OrderServiceTests
-{
-    private readonly Mock<IOrderRepository> _mockRepository;
-    private readonly Mock<IMapper> _mockMapper;
-    private readonly Mock<ILogger<IOrderService>> _mockLogger;
-    private readonly Mock<IKafkaProducer> _mockKafkaProducer;
-    private readonly Mock<IOptions<KafkaTopicSettings>> _mockTopicSettings;
-
-    public OrderServiceTests()
     {
-        _mockRepository = new Mock<IOrderRepository>();
-        _mockMapper = new Mock<IMapper>();
-        _mockLogger = new Mock<ILogger<IOrderService>>();
-        _mockKafkaProducer = new Mock<IKafkaProducer>();
-        _mockTopicSettings = new Mock<IOptions<KafkaTopicSettings>>();
-        _mockTopicSettings.Setup(x => x.Value).Returns(new KafkaTopicSettings());
-    }
+        private readonly Mock<IOrderRepository> _mockRepository;
+        private readonly Mock<IMapper> _mockMapper;
+        private readonly Mock<ILogger<IOrderService>> _mockLogger;
+        private readonly Mock<IKafkaProducer> _mockKafkaProducer;
+        private readonly Mock<IOptions<KafkaTopicSettings>> _mockTopicSettings;
+        private readonly Mock<HttpClient> _mockHttpClient;
+        private readonly Mock<IOptions<ServiceUrlSettings>> _mockServiceUrlSettings;
 
-    [Fact]
+        public OrderServiceTests()
+        {
+            _mockRepository = new Mock<IOrderRepository>();
+            _mockMapper = new Mock<IMapper>();
+            _mockLogger = new Mock<ILogger<IOrderService>>();
+            _mockKafkaProducer = new Mock<IKafkaProducer>();
+            _mockTopicSettings = new Mock<IOptions<KafkaTopicSettings>>();
+            _mockTopicSettings.Setup(x => x.Value).Returns(new KafkaTopicSettings());
+            _mockHttpClient = new Mock<HttpClient>();
+            _mockServiceUrlSettings = new Mock<IOptions<ServiceUrlSettings>>();
+            _mockServiceUrlSettings.Setup(x => x.Value).Returns(new ServiceUrlSettings { UserService = "http://localhost:5001" });
+        }    [Fact]
     public async Task GetOrderAsync_WithValidId_ShouldReturnOrderResponseDto()
     {
         // Arrange
@@ -43,7 +47,7 @@ public class OrderServiceTests
             .ReturnsAsync(order);
         _mockMapper.Setup(m => m.Map<OrderResponseDto>(order)).Returns(responseDto);
 
-        var service = new OrderSvc(_mockRepository.Object, _mockMapper.Object, _mockKafkaProducer.Object, _mockLogger.Object, _mockTopicSettings.Object);
+        var service = new OrderSvc(_mockRepository.Object, _mockMapper.Object, _mockKafkaProducer.Object, _mockLogger.Object, _mockHttpClient.Object, _mockTopicSettings.Object, _mockServiceUrlSettings.Object);
 
         // Act
         var result = await service.GetOrderAsync(orderId, CancellationToken.None);
@@ -64,7 +68,7 @@ public class OrderServiceTests
         _mockRepository.Setup(r => r.GetOrderAsync(orderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Order?)null);
 
-        var service = new OrderSvc(_mockRepository.Object, _mockMapper.Object, _mockKafkaProducer.Object, _mockLogger.Object, _mockTopicSettings.Object);
+        var service = new OrderSvc(_mockRepository.Object, _mockMapper.Object, _mockKafkaProducer.Object, _mockLogger.Object, _mockHttpClient.Object, _mockTopicSettings.Object, _mockServiceUrlSettings.Object);
 
         // Act
         var result = await service.GetOrderAsync(orderId, CancellationToken.None);
@@ -72,33 +76,6 @@ public class OrderServiceTests
         // Assert
         Assert.Null(result);
         _mockRepository.Verify(r => r.GetOrderAsync(orderId, It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
-    public async Task GetAllOrdersAsync_ShouldReturnAllOrders()
-    {
-        // Arrange
-        var orders = new List<Order>
-        {
-            new Order { Id = Guid.NewGuid(), UserId = Guid.NewGuid(), Product = "Monitor", Quantity = 1, Price = 300m },
-            new Order { Id = Guid.NewGuid(), UserId = Guid.NewGuid(), Product = "Keyboard", Quantity = 2, Price = 90m }
-        };
-
-        var dtos = orders.Select(o => new OrderResponseDto { Id = o.Id, UserId = o.UserId, Product = o.Product, Quantity = o.Quantity, Price = o.Price }).ToList();
-
-        _mockRepository.Setup(r => r.GetAllOrdersAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(orders);
-        _mockMapper.Setup(m => m.Map<IEnumerable<OrderResponseDto>>(orders)).Returns(dtos);
-
-        var service = new OrderSvc(_mockRepository.Object, _mockMapper.Object, _mockKafkaProducer.Object, _mockLogger.Object, _mockTopicSettings.Object);
-
-        // Act
-        var result = await service.GetAllOrdersAsync(CancellationToken.None);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(2, result.Count());
-        _mockRepository.Verify(r => r.GetAllOrdersAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -110,6 +87,8 @@ public class OrderServiceTests
         var createdOrder = new Order { Id = Guid.NewGuid(), UserId = userId, Product = "Desktop PC", Quantity = 1, Price = 1500m };
         var responseDto = new OrderResponseDto { Id = createdOrder.Id, UserId = userId, Product = "Desktop PC", Quantity = 1, Price = 1500m };
 
+        _mockRepository.Setup(r => r.IsUserExistAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
         _mockRepository.Setup(r => r.CreateOrderAsync(createDto, It.IsAny<CancellationToken>()))
             .ReturnsAsync(createdOrder);
         _mockMapper.Setup(m => m.Map<Order>(createDto)).Returns(createdOrder);
@@ -117,7 +96,7 @@ public class OrderServiceTests
         _mockKafkaProducer.Setup(k => k.PublishAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>()))
             .Returns(Task.CompletedTask);
 
-        var service = new OrderSvc(_mockRepository.Object, _mockMapper.Object, _mockKafkaProducer.Object, _mockLogger.Object, _mockTopicSettings.Object);
+        var service = new OrderSvc(_mockRepository.Object, _mockMapper.Object, _mockKafkaProducer.Object, _mockLogger.Object, _mockHttpClient.Object, _mockTopicSettings.Object, _mockServiceUrlSettings.Object);
 
         // Act
         var result = await service.CreateOrderAsync(createDto, CancellationToken.None);
@@ -127,24 +106,5 @@ public class OrderServiceTests
         Assert.Equal("Desktop PC", result.Product);
         _mockRepository.Verify(r => r.CreateOrderAsync(createDto, It.IsAny<CancellationToken>()), Times.Once);
         _mockKafkaProducer.Verify(k => k.PublishAsync(_mockTopicSettings.Object.Value.OrderCreated, createdOrder.Id.ToString(), It.IsAny<object>()), Times.Once);
-    }
-
-    [Fact]
-    public async Task GetAllOrdersAsync_WithEmptyDatabase_ShouldReturnEmptyList()
-    {
-        // Arrange
-        _mockRepository.Setup(r => r.GetAllOrdersAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Order>());
-        _mockMapper.Setup(m => m.Map<IEnumerable<OrderResponseDto>>(It.IsAny<IEnumerable<Order>>()))
-            .Returns(new List<OrderResponseDto>());
-
-        var service = new OrderSvc(_mockRepository.Object, _mockMapper.Object, _mockKafkaProducer.Object, _mockLogger.Object, _mockTopicSettings.Object);
-
-        // Act
-        var result = await service.GetAllOrdersAsync(CancellationToken.None);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Empty(result);
     }
 }

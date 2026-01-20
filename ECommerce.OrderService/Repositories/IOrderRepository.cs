@@ -11,5 +11,7 @@ namespace ECommerce.OrderService.Repositories
         Task<Order> CreateOrderAsync(CreateOrderRequestDto order, CancellationToken ct);
 
         Task<IEnumerable<Order>> GetAllOrdersAsync(CancellationToken ct);
+
+        Task<bool> IsUserExistAsync(Guid userId, CancellationToken ct);
     }
 }

@@ -1,3 +1,4 @@
+using ECommerce.OrderService.Configuration;
 using ECommerce.OrderService.Data;
 using ECommerce.OrderService.Kafka.Consumers;
 using ECommerce.OrderService.Kafka.Handlers;
@@ -35,6 +36,12 @@ builder.Services.AddSwaggerGen(action=>
 
 builder.Services.AddDbContext<OrderDbContext>(options=>
     options.UseInMemoryDatabase("orderdb"));//scoped by default
+
+// Register ServiceUrlSettings from configuration
+builder.Services.Configure<ServiceUrlSettings>(builder.Configuration.GetSection("ServiceUrls"));
+
+// Add HttpClient for inter-service communication
+builder.Services.AddHttpClient();
 
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IOrderService, OrderService>();

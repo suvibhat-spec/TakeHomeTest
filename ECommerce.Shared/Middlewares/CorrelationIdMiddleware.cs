@@ -9,13 +9,15 @@ public class CorrelationIdMiddleware(RequestDelegate next, ILogger<CorrelationId
 {
     public async Task InvokeAsync(HttpContext context)
     {
-        if (!context.Request.Headers.TryGetValue("X-Correlation-ID", out var correlationId))
+        string correlationId;
+        if (!context.Request.Headers.TryGetValue("X-Correlation-ID", out var correlationIdHeader))
         {
             correlationId = Guid.NewGuid().ToString();
             logger.LogInformation("Generated new Correlation ID: {CorrelationId}", correlationId);
         }
         else
         {
+            correlationId = correlationIdHeader.ToString();
             logger.LogInformation("Using provided Correlation ID: {CorrelationId}", correlationId);
         }
 
