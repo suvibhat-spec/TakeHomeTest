@@ -4,10 +4,10 @@
     - [.Net Core 10.0 using asp.net core Web API with C#.Net and EF](#net-core-100-using-aspnet-core-web-api-with-cnet-and-ef)
   - [Introduction](#introduction)
   - [Application Architecture](#application-architecture)
-    - [Resiliency Improvements](#resiliency-improvements)
     - [Middlewares Used](#middlewares-used)
     - [End-points for UserSerice API](#end-points-for-userserice-api)
     - [End-points for Orderservice API](#end-points-for-orderservice-api)
+    - [Resiliency Improvements](#resiliency-improvements)
   - [Opensource Tools Used](#opensource-tools-used)
   - [How to run the application](#how-to-run-the-application)
     - [Docker Compose](#docker-compose)
@@ -20,9 +20,6 @@ This is a .Net Core application implementing a microservices based back-end syst
 
 The sample application is build based on the microservices architecture. There are serveral advantages in building a application using Microservices architecture like Services can be developed, deployed and scaled independently.The below diagram shows the high level design of Back-end architecture.
 ![Application Architecture](microservices.png)
-
-### Resiliency Improvements
-The OrderService has been designed with resilience to infrastructure failures in mind. When creating an order, the service validates user existence through a three-tier approach: first checking a local cache populated by Kafka events, then making a direct HTTP call to UserService, and finally allowing order creation . This design ensures that temporary failures in message brokers do not block critical business operations, while centralized exception handling and correlation IDs provide observability for troubleshooting distributed issues across microservices.
 
 ### Middlewares Used
 - ExceptionHandlingMiddleware (Centralized exception handling with JSON error responses and appropriate HTTP status codes)
@@ -37,6 +34,9 @@ The OrderService has been designed with resilience to infrastructure failures in
 
 1. Route: **"/api/order"** [HttpPost]- To create a new order
 2. Route: **"/api/order/{id}"** [HttpGet]- To get order details by order id
+
+### Resiliency Improvements
+The OrderService has been designed with resilience to infrastructure failures in mind. When creating an order, the service validates user existence through a three-tier approach: first checking a local cache populated by Kafka events, then making a direct HTTP call to UserService, and finally allowing order creation . This design ensures that temporary failures in message brokers do not block critical business operations, while centralized exception handling and correlation IDs provide observability for troubleshooting distributed issues across microservices.
 
 ## Opensource Tools Used
 - Serilog (For Logging)
